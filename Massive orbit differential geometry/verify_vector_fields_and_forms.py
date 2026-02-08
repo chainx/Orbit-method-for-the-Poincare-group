@@ -2,6 +2,8 @@ from massive_orbits_dg import *
 
 VERBOSE = False # Prints time to execute each test
 
+Λ0, Λ1, Λ2, Λ3 = construct_Lambda_cols()
+
 # -------------------------------------------
 # Candidate left invariant vector fields
 # -------------------------------------------

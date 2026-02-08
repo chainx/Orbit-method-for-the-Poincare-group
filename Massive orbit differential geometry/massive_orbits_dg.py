@@ -112,7 +112,13 @@ symbol_map = {
     z0f:Z0, z1f:Z1, zb0f:ZB0, zb1f:ZB1,
     ε_P:EP, ε_T:ET,
 }
+plain_to_coord_map = {
+    p0: p0f, p1: p1f, p2: p2f, p3: p3f,
+    q0: q0f, q1: q1f, q2: q2f, q3: q3f,
+    z0: z0f, z1: z1f, zb0: zb0f, zb1: zb1f,
+}
 inv_symbol_map = {v: k for k, v in symbol_map.items()}
+coord_to_plain_map = {v: k for k, v in plain_to_coord_map.items()}
 
 mass_shell = P0**2 - P1**2 - P2**2 - P3**2 - m**2
 pzzb = ET*(sp.Matrix([Z0, Z1]).T * ε.T * sigma(P0, P1, P2, P3) * ε * sp.Matrix([ZB0, ZB1]))[0]
@@ -133,8 +139,21 @@ def reduce_symb_expr(expr):
     return sp.together(num/den)
 
 def simplify_onshell(expr):
-    # reduce in Groebner ring, then return as coord-function expression
-    return reduce_symb_expr(expr.subs(symbol_map)).subs(inv_symbol_map)
+    # Accept both plain-symbol expressions and diffgeom coord-function expressions.
+    plain_symbols = set(plain_to_coord_map.keys())
+    uses_plain_symbols = bool(expr.free_symbols.intersection(plain_symbols))
+
+    if uses_plain_symbols:
+        expr = expr.xreplace(plain_to_coord_map)
+        expr = sp.expand(expr.rewrite(sp.exp))
+
+    expr = reduce_symb_expr(expr.subs(symbol_map)).subs(inv_symbol_map)
+
+    if uses_plain_symbols:
+        expr = sp.powsimp(sp.trigsimp(sp.simplify(expr), method="fu"), force=True)
+        expr = expr.xreplace(coord_to_plain_map)
+
+    return expr
 
 def simplify_vf(V):
     V = sp.expand(V)
@@ -196,12 +215,14 @@ def Lambda_col(nu):
     if nu in (1,2,3): col = ε_P * col
     return (1/s) * col
 
-Λ1 = Lambda_col(1).applyfunc(simplify_onshell)
-Λ2 = Lambda_col(2).applyfunc(simplify_onshell)
-Λ3 = Lambda_col(3).applyfunc(simplify_onshell)
-Λ0 = (1/m) * sp.Matrix([p0f, p1f, p2f, p3f])
+def construct_Lambda_cols():
+    Λ0 = (1/m) * sp.Matrix([p0f, p1f, p2f, p3f])
+    Λ1 = Lambda_col(1).applyfunc(simplify_onshell)
+    Λ2 = Lambda_col(2).applyfunc(simplify_onshell)
+    Λ3 = Lambda_col(3).applyfunc(simplify_onshell)
 
-compute_time_elapsed("Λ cols constructed")
+    compute_time_elapsed("Λ cols constructed")
+    return Λ0, Λ1, Λ2, Λ3
 
 if __name__ == "__main__":
     diff = ( Lambda_col(0) - (1/m) * sp.Matrix([p0f, p1f, p2f, p3f]) ).applyfunc(simplify_onshell)

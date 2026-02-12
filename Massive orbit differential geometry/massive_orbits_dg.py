@@ -1,33 +1,8 @@
-import time
+from performance_benchmarking import compute_time_elapsed
 from functools import lru_cache
 
 import sympy as sp
 from sympy.diffgeom import Manifold, Patch, CoordSystem
-
-# ---------------------------
-# Performance benchmarking
-# --------------------------
-
-global total_time_elapsed
-total_time_elapsed = 0
-start = time.perf_counter()
-
-def time_conversion(s):
-    s = int(s)
-    hour, r = divmod(s, 3600)
-    min, sec = divmod(r, 60)
-    out  = f"{hour:d}h " if hour else ""
-    out += f"{min}m " if hour or min else ""
-    out += f"{sec}s"
-    return out
-
-def compute_time_elapsed(msg="", verbose=True):
-    global total_time_elapsed
-    total_elapsed_new = time.perf_counter() - start
-    elapsed = time_conversion(total_elapsed_new-total_time_elapsed)
-    if verbose:
-        print(f"{msg}. Time elapsed: {elapsed}")
-    total_time_elapsed =  total_elapsed_new
 
 # -------------
 # Definitions
@@ -210,7 +185,7 @@ col2 = Πp*w + Πm*z; col2b = Πp*wb + Πm*zb
 def Lambda_col(nu):
     # η is applied to raise the spacetime index on σbar
     col = η * sp.Matrix([sp.trace(σbar[mu] * λ * σ[nu] * λ_dag) / 2 for mu in range(4)])
-    # Right multiplication by discrete element corresponding to ε_P, ε_T
+    # Right multiplication by discrete element corresponding to (ε_P, ε_T)
     if nu == 0:       col = ε_T * col
     if nu in (1,2,3): col = ε_P * col
     return (1/s) * col
@@ -227,3 +202,4 @@ def construct_Lambda_cols():
 if __name__ == "__main__":
     diff = ( Lambda_col(0) - (1/m) * sp.Matrix([p0f, p1f, p2f, p3f]) ).applyfunc(simplify_onshell)
     assert diff==sp.Matrix([0,0,0,0]), diff
+    compute_time_elapsed("Λ^μ_0 == 1/m p^μ verified")

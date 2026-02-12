@@ -1,4 +1,14 @@
-from massive_orbits_dg import *
+from performance_benchmarking import compute_time_elapsed
+
+from massive_orbits_dg import (
+    C, sp, η, ε, 
+    dot, sigma, decompose, apply_vf, simplify_onshell, simplify_vf, construct_Lambda_cols,
+    I, half, m, s, ε_P, ε_T,
+    p0f, p1f, p2f, p3f, z0f, z1f, zb0f, zb1f,
+    e_p, e_q, e_z, e_zb,
+    dp, dq, dz, dzb,
+    w, wb, z, zb,
+)
 
 VERBOSE = False # Prints time to execute each test
 
@@ -47,8 +57,6 @@ def check_tangency():
 
         assert tangent_p_sq==0, ("p_sq test", VF_name, tangent_p_sq)
         assert tangent_pzzb==0, ("pzzb test", VF_name, tangent_pzzb)
-    
-    return total_time_elapsed
 
 # ------------------------------
 # Commutation relation chekcs

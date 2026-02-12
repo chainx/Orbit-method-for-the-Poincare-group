@@ -1,35 +1,24 @@
+from performance_benchmarking import compute_time_elapsed
+
 from itertools import permutations, product
 import sympy as sp
+
 I = sp.I
+half = sp.S.Half
 
 # Spinor epsilon
-ε = sp.Matrix([[0, 1],
-               [-1, 0]])
+ε = sp.Matrix([[0, 1],[-1, 0]])
 
 # Pauli matrices
-σ0 = sp.Matrix([[1, 0],
-                [0, 1]])
-σ1 = sp.Matrix([[0, 1],
-                [1, 0]])
-σ2 = sp.Matrix([[0, -I],
-                [I,  0]])
-σ3 = sp.Matrix([[1,  0],
-                [0, -1]])
+σ0 = sp.Matrix([[1,0],[0,1]])
+σ1 = sp.Matrix([[0,1],[1,0]])
+σ2 = sp.Matrix([[0,-I],[I,0]])
+σ3 = sp.Matrix([[1,0],[0,-1]])
 
 # Infeld–van der Waerden symbols with downstairs indices (σ_μ)_{A\dotA} (defined in equation A.8)
 barσ = [σ0, -σ1, -σ2, -σ3]
 def σ(mu, A, dotA): 
     return sp.diag(-1, 1, 1, 1)[mu, mu] * barσ[mu][dotA, A] / sp.sqrt(2)
-
-ε = sp.Matrix([[0, 1],
-               [-1, 0]])
-
-# ===============================   VERIFICATION OF SPINOR LEVI-CIVITA SYMBOL   ================================
-
-# Spinor Levi-Civita symbol in spinor form
-def spinor_levi_civita(A,B,C,D, Ad,Bd,Cd,Dd):
-    return I*( ε[A,C]*ε[B,D]*ε[Ad,Dd]*ε[Bd,Cd]
-              -ε[A,D]*ε[B,C]*ε[Ad,Cd]*ε[Bd,Dd] )
 
 def Lorentz_LeviCivita(mu,nu,rho,sig):
     """
@@ -41,6 +30,40 @@ def Lorentz_LeviCivita(mu,nu,rho,sig):
     In Lorentzian signature (+---), lowering all indices introduces a minus sign since det(g) = −1, giving ε_{0123} = −1.
     """
     return -sp.LeviCivita(mu,nu,rho,sig)
+
+# ===============================   VERIFICATION OF VECTOR HODGE DUAL IDENTITY   ================================
+
+p0, p1, p2, p3 = sp.symbols("p0 p1 p2 p3", real=True)
+W0, W1, W2, W3 = sp.symbols("W0 W1 W2 W3", real=True)
+p = sp.Matrix([p0, p1, p2, p3])
+W = sp.Matrix([W0, W1, W2, W3])
+
+η = sp.diag(1,-1,-1,-1) # Minkowski metric
+contraction = lambda u, v: (u.T * η * v)[0]
+
+def LHS(p, W):
+    S = sp.zeros(4, 4)
+    for mu, nu, rho, sigma in product(range(4), repeat=4):
+        S[mu, nu] += Lorentz_LeviCivita(mu, nu, rho, sigma) * p[rho] * W[sigma]
+    v = sp.zeros(4, 1)
+    for mu, nu, rho, sigma in product(range(4), repeat=4):
+        # Using η to convert p^μ to p_μ
+        v[mu] += half*sp.LeviCivita(mu,nu,rho,sigma)*(η*p)[nu]*S[rho, sigma]
+    return sp.simplify(v)
+
+def RHS(p, W):
+    return contraction(p, p)*W - contraction(p, W)*p
+
+diff = sp.simplify(LHS(p, W) - RHS(p, W))
+assert diff == sp.zeros(4, 1), diff
+compute_time_elapsed("*(p ∧ *(p ∧ W) == η(p,p)W - η(p,W)p verified")
+
+# ===============================   VERIFICATION OF SPINOR LEVI-CIVITA SYMBOL   ================================
+
+# Spinor Levi-Civita symbol in spinor form
+def spinor_levi_civita(A,B,C,D, Ad,Bd,Cd,Dd):
+    return I*( ε[A,C]*ε[B,D]*ε[Ad,Dd]*ε[Bd,Cd]
+              -ε[A,D]*ε[B,C]*ε[Ad,Cd]*ε[Bd,Dd] )
 
 # Define the spinorized Levi-Civita via contraction with σ's:
 # ε_{ABCD \dotA\dotB\dotC\dotD} := ε_{μνρσ} σ^μ_{A \dotA} σ^ν_{B \dotB} σ^ρ_{C \dotC} σ^σ_{D \dotD}
@@ -56,15 +79,16 @@ for A,B,C,D,Ad,Bd,Cd,Dd in product(range(2), repeat=8):
     diffs.append(sp.simplify(spinor_levi_civita_computed(A,B,C,D,Ad,Bd,Cd,Dd) - spinor_levi_civita(A,B,C,D,Ad,Bd,Cd,Dd)))
 
 assert set(diffs) == {0}, diffs
+compute_time_elapsed("Spinor form of Levi-Civita symbol verified")
 
 # ===============================   VERIFICATION OF HODGE STAR EIGENVALUES   ================================
 
-# Arbitrary symmetric bispinor Φ_{AB}
+# Arbitrary symmetric bispinor Φ_{(AB)}
 α, β, γ = sp.symbols("α β γ")
 Φ = sp.Matrix([[α, β],
                [β, γ]])
 
-# Define the bivector term: F_{A\dotA B\dotB} = Φ_{AB} ε_{\dotA\dotB}
+# Define the bivector term: F_{A\dotA B\dotB} = Φ_{(AB)} ε_{\dotA\dotB}
 def F(A,Ad,B,Bd):
     return Φ[A,B]*ε[Ad,Bd]
 
@@ -97,4 +121,4 @@ for A,Ad,B,Bd in product(range(2), repeat=4):
 assert set(ratios)=={-I}, (ratios, nonzero_components)
 assert set(eigen_val_eqs)=={0},   (eigen_val_eqs,  nonzero_components)
 
-print("Success!")
+compute_time_elapsed("Verified Φ_{(AB)} ε_{\dotA\dotB} has eigenvalue -i")

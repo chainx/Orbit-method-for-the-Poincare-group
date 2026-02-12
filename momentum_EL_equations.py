@@ -1,3 +1,5 @@
+from performance_benchmarking import compute_time_elapsed
+
 import sympy as sp
 from sympy import euler_equations
 
@@ -25,9 +27,9 @@ A, b = sp.linear_eq_to_matrix(EL, [sp.diff(q̇1,tau), sp.diff(q̇2,tau), sp.diff
 q̇_solved = A.LUsolve(b)            # Aq̇ = b => q̇ = A^{-1} b
 assert sp.simplify(A*q̇_solved - b)==sp.Matrix([[0], [0], [0]]), (A*q̇_solved, b)
 
-# Verification of q̇ - (q̇0/p0) p = ( [p.s] ω + ṗ x s ) / (m*p0) after using EL equations to solve for q̇_solved
+# Verification of q̇ - (q̇0/p0)p = ( [p.s]ω + ṗxs ) / (m*p0) after using EL equations to solve for q̇_solved
 LHS = q̇_solved - (q̇0/p0)*p
 RHS = ( p.dot(s)*ω + ṗ.cross(s) ) / (m*p0)
 assert sp.simplify(LHS - RHS)==sp.Matrix([[0], [0], [0]]), (LHS, RHS)
 
-print("Success!")
+compute_time_elapsed("Momentum EL equation implies\nq̇ - (q̇0/p0)p = ( [p.s]ω + ṗxs ) / (m*p0)\nverified")

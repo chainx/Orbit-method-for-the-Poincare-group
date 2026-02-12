@@ -1,3 +1,5 @@
+from performance_benchmarking import compute_time_elapsed
+
 import sympy as sp
 from functools import reduce, partial
 
@@ -8,13 +10,18 @@ def compose(*funcs):
 
 I = sp.I # Imaginary number
 
+def main():
+    verify_sigma_identity()
+    verify_relations()
+
 # =====================   DEFINITIONS   =====================
 
 p0 = sp.symbols("p0", real=True, nonzero=True) # p^μ is assumed timelike
 p1, p2, p3 = sp.symbols("p1 p2 p3", real=True)
 p = sp.Matrix([p0, p1, p2, p3])
-z0, z1 = sp.symbols("z0 z1")
-z = sp.Matrix([z0, z1])
+z0, z1 = sp.symbols("z0 z1"); z = sp.Matrix([z0, z1])
+ψ0, ψ1 = sp.symbols("ψ0 ψ1"); ψ = sp.Matrix([ψ0, ψ1])
+
 ε_P = sp.symbols('ε_P', real=True)
 m = sp.symbols("m", real=True)
 
@@ -30,6 +37,7 @@ def sigma(p):
     ])
 
 def w(p, z, ε_P):
+    # p^{A\dotA} \bar{z}_\dotA = p^{A\dotA} (- ε_{\dotA \dotB} \bar{z}^\dotB )
     return ε_P * sp.sign(p[0]) * (sp.sqrt(2) / m) * (sigma(p) * -ε * sp.conjugate(z))
 
 # =====================   PARITY / TIME REVERSAL ACTIONS   =====================
@@ -59,10 +67,10 @@ def act_gauge_transfo(p, z, ε_P, a, b, c):
 # =====================   ALGEBRAIC SIMPLIFICATION   =====================
 
 ε_T = sp.symbols('ε_T', real=True)
-zb0, zb1 = sp.symbols("zb0 zb1")
-G = sp.groebner(
+zb0, zb1, ψb0, ψb1 = sp.symbols("zb0 zb1 ψb0 ψb1")
+Grob = sp.groebner(
     [p0**2 - p1**2 - p2**2 - p3**2 - m**2, ε_P**2 - 1, ε_T**2 - 1],
-    z0, z1, zb0, zb1, p0, p1, p2, p3, ε_P, ε_T, m,
+    z0, z1, zb0, zb1, p0, p1, p2, p3, ε_P, ε_T, m, ψ0, ψ1, ψb0, ψb1,
     order="lex",
     domain=sp.QQ.algebraic_field(I),
 )
@@ -70,14 +78,15 @@ def impose_constraints(expr):
     expr = sp.together(sp.simplify(expr))
     subs = {
         sp.Abs(p0): p0*ε_T,
-        sp.conjugate(z0): zb0, sp.conjugate(z1): zb1
+        sp.conjugate(z0): zb0, sp.conjugate(z1): zb1,
+        sp.conjugate(ψ0): ψb0, sp.conjugate(ψ1): ψb1,
     }
     expr = expr.subs(subs)
     expr = sp.together(expr)
 
     num, den = sp.fraction(expr)
-    num_red = G.reduce(sp.expand(num))[1]
-    den_red = G.reduce(sp.expand(den))[1]
+    num_red = Grob.reduce(sp.expand(num))[1]
+    den_red = Grob.reduce(sp.expand(den))[1]
 
     expr_red = sp.cancel(num_red/den_red)
     expr_red = expr_red.subs({ε_T**-1: ε_T, ε_P**-1: ε_P, ε_T**2: 1, ε_P**2: 1})
@@ -122,14 +131,25 @@ def verify_relations():
             compare(z_actual, z_target, check_name, a, b, c)
 
         commutation_checks = [
-            ('P and G', compose(P, G), compose(G, P)),
-            ('T and G', compose(T, G), compose(G, T)),
+            ('P and G commute', compose(P, G), compose(G, P)),
+            ('T and G commute', compose(T, G), compose(G, T)),
         ]
         for check_name, func1, func2 in commutation_checks:
             _, z_1, _ = func1(p, z, ε_P)
             _, z_2, _ = func2(p, z, ε_P)
             compare(z_1, z_2, check_name, a, b, c)
 
-verify_sigma_identity()
-verify_relations()
-print("Success!")
+        inner_product_checks = [
+            ('Inner product invariant under PG', compose(P, G)),
+            ('Inner product invariant under T', T),
+        ]
+        for check_name, func in inner_product_checks:
+            ψ_prime, z_prime = func(p, ψ, ε_P)[1], func(p, z, ε_P)[1]
+            diff = (ψ_prime.T * ε * z_prime)[0] - (ψ.T * ε * z)[0]
+            diff = impose_constraints(sp.simplify(diff))
+            assert diff==0, diff
+
+        compute_time_elapsed(f"Sqaure, commutation, and inner product relations verified for: a={a}, b={b}, c={c}")
+
+if __name__ == "__main__":
+    main()

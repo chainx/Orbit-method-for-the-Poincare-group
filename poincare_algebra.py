@@ -24,6 +24,9 @@ T0 = T(0); T = (T(1), T(2), T(3)); # Translations
 J = (L(2,3), L(3,1), L(1,2))       # Rotations
 K = (L(0,1), L(0,2), L(0,3))       # Boosts
 
+N_1 = {"+": K[0] + J[1], "-": K[0] - J[1]}
+N_2 = {"+": K[1] - J[0], "-": K[1] + J[0]}
+
 def commutator(X, Y):
     Y_is_translation = (Y.shape==(4,1))
     if Y_is_translation:
@@ -44,5 +47,27 @@ for i in range(3):
     assert commutator(J[i], T0) == zero_vec,               ("[J_i, T_0]", i,0)
     assert commutator(K[i], T0) == -T[i],                  ("[K_i, T_0]", i,0)
 
+assert commutator(N_1["+"], N_1["-"]) == -2*K[2]
+assert commutator(N_2["+"], N_2["-"]) == -2*K[2]
+assert commutator(N_1["+"], N_2["-"]) == -2*J[2]
+assert commutator(N_1["-"], N_2["+"]) == -2*J[2]
+
+for sign in ("+", "-"):
+    sign_factor = -1 if sign == "-" else 1
+    assert commutator(N_1[sign], N_2[sign]) == sp.zeros(4,4)
+    assert commutator(N_1[sign], J[2]) == -N_2[sign]
+    assert commutator(N_2[sign], J[2]) ==  N_1[sign]
+    assert commutator(N_1[sign], K[2]) == sign_factor * N_1[sign]
+    assert commutator(N_2[sign], K[2]) == sign_factor * N_2[sign]
+
+    assert commutator(N_1[sign], T0 + sign_factor*T[2]) == zero_vec
+    assert commutator(N_2[sign], T0 + sign_factor*T[2]) == zero_vec
+
 compute_time_elapsed("Poincare commutation relations verified")
 # sp.pprint(J[2]) # Print J_3
+
+for i in range(3):
+    for j in range(3):
+        assert -half * sp.trace(J[i] * J[j]) == δ(i,j), (i,j)
+        assert -half * sp.trace(K[i] * K[j]) == -δ(i,j), (i,j)
+        assert -half * sp.trace(J[i] * K[j]) == 0, (i,j)

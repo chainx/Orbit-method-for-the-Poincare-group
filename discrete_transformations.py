@@ -64,6 +64,14 @@ def act_gauge_transfo(p, z, ε_P, a, b, c):
     Gz = double_cover_sign * -w(p,z,ε_P)
     return p, Gz, -ε_P
 
+def act_P_gauge_fixed(p, z, ε_P, a, b, c):
+    Pp = sp.diag(1, -1, -1, -1) * p
+    double_cover_sign = (-1)**a * sp.sign(p[0])**(a+b+c)
+    # Pz = double_cover_sign * -ε_P*R*sp.conjugate(w(p, z, ε_P))
+    # Pz = double_cover_sign * -ε_P*w(Pp, R*sp.conjugate(z), ε_P)
+    Pz = double_cover_sign * -sp.sign(p[0]) * (sp.sqrt(2)/m) * sigma(Pp) * z
+    return Pp, Pz, ε_P
+
 # =====================   ALGEBRAIC SIMPLIFICATION   =====================
 
 ε_T = sp.symbols('ε_T', real=True)
@@ -113,9 +121,15 @@ def verify_relations():
     for double_cover in range(2**3):
         a, b, c = map(int, format(double_cover, '03b'))
 
-        P = partial(act_P,             a=a, b=b, c=c)
-        T = partial(act_T,             a=a, b=b, c=c)
-        G = partial(act_gauge_transfo, a=a, b=b, c=c)
+        P  = partial(act_P,             a=a, b=b, c=c)
+        T  = partial(act_T,             a=a, b=b, c=c)
+        G  = partial(act_gauge_transfo, a=a, b=b, c=c)
+        PG = partial(act_P_gauge_fixed, a=a, b=b, c=c)
+
+        check_name = 'Verifying gauge fixed P'
+        _, z_1, _ = compose(G, P)(p, z, ε_P)
+        _, z_2, _ = PG(p, z, ε_P)
+        compare(z_1, z_2, check_name, a, b, c)
 
         checks = [
             ('G squared',  (-1)**a *     z, compose(G, G)),

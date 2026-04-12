@@ -39,7 +39,7 @@ This file summarizes which scripts in this repository verify which calculations 
   Verifies tensor and spinor identities used in the appendices and in the derivation of the massive spin formulas:
   - equation **(2.2.11)**: the Lorentzian Hodge-dual identity $\ast(p \wedge \ast(p \wedge W)) = \eta(p,p)W - \eta(p,W)p$,
   - equation **(A.27)**: the spinor form of the Levi-Civita tensor,
-  - and the that the hodge star eigenvalue of $\Phi_{(AB)} \epsilon_{\dot{A}\dot{B}}$ is -i.
+  - and the that the hodge star eigenvalue of $\Phi_{(AB)} \epsilon_{\dot{A}\dot{B}}$ is $-i$.
   The latter two are directly relevant to the proof machinery behind **Lemma A.8**, which proves equation **(2.3.8)**.
 
 - `spinor_identity.py`

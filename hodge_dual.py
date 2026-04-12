@@ -31,7 +31,9 @@ def Lorentz_LeviCivita(mu,nu,rho,sig):
     """
     return -sp.LeviCivita(mu,nu,rho,sig)
 
-# ===============================   VERIFICATION OF VECTOR HODGE DUAL IDENTITY   ================================
+# ---------------------------------------------------------
+# Verification of Hodge dual identity in equation 2.2.11
+# ---------------------------------------------------------
 
 p0, p1, p2, p3 = sp.symbols("p0 p1 p2 p3", real=True)
 W0, W1, W2, W3 = sp.symbols("W0 W1 W2 W3", real=True)
@@ -58,7 +60,9 @@ diff = sp.simplify(LHS(p, W) - RHS(p, W))
 assert diff == sp.zeros(4, 1), diff
 compute_time_elapsed("*(p ∧ *(p ∧ W) == η(p,p)W - η(p,W)p verified")
 
-# ===============================   VERIFICATION OF SPINOR LEVI-CIVITA SYMBOL   ================================
+# ---------------------------------------------------------------------
+# Verification of spinor form of Levi-Civita symbol in equation A.27
+# ---------------------------------------------------------------------
 
 # Spinor Levi-Civita symbol in spinor form
 def spinor_levi_civita(A,B,C,D, Ad,Bd,Cd,Dd):
@@ -81,7 +85,9 @@ for A,B,C,D,Ad,Bd,Cd,Dd in product(range(2), repeat=8):
 assert set(diffs) == {0}, diffs
 compute_time_elapsed("Spinor form of Levi-Civita symbol verified")
 
-# ===============================   VERIFICATION OF HODGE STAR EIGENVALUES   ================================
+# -----------------------------------------------------------------------------------------
+# Verification of hodge star eigenvectors and eigenvalues (sentence below equation A.27)
+# -----------------------------------------------------------------------------------------
 
 # Arbitrary symmetric bispinor Φ_{(AB)}
 α, β, γ = sp.symbols("α β γ")

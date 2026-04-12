@@ -12,7 +12,7 @@ This file summarizes which scripts in this repository verify which calculations 
   Verifies equation **(2.3.36)** in Proposition **2.21** for the massive pre-symplectic potential written in $(p,q,\theta,\phi)$ coordinates.
 
 - `Massive orbit differential geometry/massive_orbits_dg.py`
-  Helper module which sets up the massive coordinate system, on-shell simplification rules, the spinor $w(p,z,ε_P,ε_T)$, and the Lorentz-frame columns `Λ`.
+  Helper module which sets up the massive coordinate system, on-shell simplification rules, the spinor $w(p,z,ε_P,ε_T)$, and the Lorentz-frame columns $\Lambda$.
 
 ## Massless-orbit differential geometry
 
@@ -31,7 +31,7 @@ This file summarizes which scripts in this repository verify which calculations 
 - `pauli_lubanski_vector.py`
   Verifies several spin/momentum identities used in sections **2.2** and **2.3.1**:
   - the Pauli-Lubanski vectors in equation **(2.2.8)** for the reference dual Lie algebra elements,
-  - equation **(2.3.38)**: the 4-vector corresponding to $\sqrt(p)$,
+  - equation **(2.3.38)**: the 4-vector corresponding to $\sqrt{p}$,
   - eqaution **(2.3.28)**: the 3-vector s corresponding to the rest frame spinor u,
   - equation **(2.3.29)**: the Pauli-Lubanski pseudovector W expressed in terms of p and s.
 

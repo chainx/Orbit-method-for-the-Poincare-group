@@ -7,12 +7,38 @@ from massive_orbits_dg import (
     p0f, p1f, p2f, p3f, z0f, z1f, zb0f, zb1f,
     e_p, e_q, e_z, e_zb,
     dp, dq, dz, dzb,
-    w, wb, z, zb,
+    w, wb, z, zb, λ,
 )
 
 VERBOSE = False # Prints time to execute each test
 
 Λ0, Λ1, Λ2, Λ3 = construct_Lambda_cols()
+
+# ---------------------------------------------------------
+# Coordinate conventions fixed by the manuscript, not duality
+# ---------------------------------------------------------
+
+def check_coordinate_conventions():
+    # z_A w^A = ε_P s, with the index lowered on the right.
+    assert simplify_onshell(dot(z, ε*w) - ε_P*s) == 0
+    # λ has columns scaled by sqrt(s), hence det(λ/sqrt(s)) = 1.
+    assert simplify_onshell(λ.det() - s) == 0
+
+    Λ = sp.Matrix.hstack(Λ0, Λ1, Λ2, Λ3)
+    for ep in (1, -1):
+        for et in (1, -1):
+            # λ = identity, with each of the four discrete group labels.
+            zs = sp.sqrt(s) * sp.Matrix([1, 0] if ep == 1 else [0, 1])
+            ws = sp.sqrt(s) * sp.Matrix([0, 1] if ep == 1 else [1, 0])
+            canonical = {
+                p0f: et*m, p1f: 0, p2f: 0, p3f: 0,
+                z0f: zs[0], z1f: zs[1], zb0f: zs[0], zb1f: zs[1],
+                ε_P: ep, ε_T: et,
+            }
+            assert w.subs(canonical).applyfunc(sp.simplify) == ws
+            assert wb.subs(canonical).applyfunc(sp.simplify) == ws
+            assert (λ/sp.sqrt(s)).subs(canonical).applyfunc(sp.simplify) == sp.eye(2)
+            assert Λ.subs(canonical).applyfunc(sp.simplify) == sp.diag(et, ep, ep, ep)
 
 # -------------------------------------------
 # Candidate left invariant vector fields
@@ -36,6 +62,16 @@ VFs = {
     "V_J1": V_J1, "V_J2": V_J2, "V_J3": V_J3,
     "V_K1": V_K1, "V_K2": V_K2, "V_K3": V_K3,
 }
+
+def check_vector_field_decomposition():
+    # Catch dropped components before testing their derivatives or brackets.
+    # In particular, old SymPy versions can lose the momentum part of V_K3
+    # when extracting coefficients from an entire noncommutative sum.
+    for name, vector in VFs.items():
+        reconstructed = sum(coef * bv for bv, coef in decompose(vector))
+        defect = sp.expand(reconstructed - vector)
+        assert defect == 0, ("vector-field decomposition", name, defect)
+
 
 # -------------------
 # Tangency checks
@@ -117,13 +153,13 @@ tests = {
 
     "[V_K2, V_T0] == -V_T2":  (V_K2, V_T0, -V_T2),
     "[V_K2, V_T1] == 0":      (V_K2, V_T1, 0),
-    "[V_K2, V_T2] ==  V_T0":  (V_K2, V_T2, -V_T0),
+    "[V_K2, V_T2] == -V_T0":  (V_K2, V_T2, -V_T0),
     "[V_K2, V_T3] == 0":      (V_K2, V_T3, 0),
 
-    "[V_K3, V_T0] ==  V_T3":  (V_K3, V_T0, -V_T3),
+    "[V_K3, V_T0] == -V_T3":  (V_K3, V_T0, -V_T3),
     "[V_K3, V_T1] == 0":      (V_K3, V_T1, 0),
     "[V_K3, V_T2] == 0":      (V_K3, V_T2, 0),
-    "[V_K3, V_T3] ==  V_T0":  (V_K3, V_T3, -V_T0),
+    "[V_K3, V_T3] == -V_T0":  (V_K3, V_T3, -V_T0),
 }
 
 def commutator(X, Y):
@@ -151,9 +187,9 @@ def check_commutation_relations(total_time_elapsed=0):
 Θ_T2 = η[2,2]*dot(η*Λ2, dq)
 Θ_T3 = η[3,3]*dot(η*Λ3, dq)
 
-Θ_J1 = (-ε_T/m)*dot(η*Λ2, dp) + (-I*ε_P/s)*( dot(z, ε*dz) - dot(zb, ε*dzb))
-Θ_J2 = (ε_T/m)*dot(η*Λ1, dp)  + (-1/s)    *( dot(z, ε*dz) + dot(zb, ε*dzb))
-Θ_J3 =                          (I/s)     *( dot(w, ε*dz) - dot(wb, ε*dzb))
+Θ_J1 = (-ε_T/m)*dot(η*Λ2, dp) + (I*ε_P/s)*( dot(z, ε*dz) - dot(zb, ε*dzb))
+Θ_J2 = (ε_T/m)*dot(η*Λ1, dp)  + (1/s)     *( dot(z, ε*dz) + dot(zb, ε*dzb))
+Θ_J3 =                          (-I/s)    *( dot(w, ε*dz) - dot(wb, ε*dzb))
 
 Θ_K1 = (1/m)*dot(η*Λ1, dp)
 Θ_K2 = (1/m)*dot(η*Λ2, dp)
@@ -183,6 +219,10 @@ def check_duality():
 # --------
 
 if __name__ == "__main__":
+    check_coordinate_conventions()
+    compute_time_elapsed("Spinor normalization and canonical group coordinates verified")
+    check_vector_field_decomposition()
+    compute_time_elapsed("Vector-field component reconstruction verified")
     check_tangency()
     compute_time_elapsed("Tangency for vector fields verified")
     check_commutation_relations()

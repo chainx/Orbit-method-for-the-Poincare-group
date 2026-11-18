@@ -14,6 +14,7 @@ def Lorentz_LeviCivita(mu,nu,rho,sig):
 
 m = sp.symbols("m", nonzero=True) # Mass
 s = sp.symbols("s", nonzero=True) # Spin
+ε_P, ε_T = sp.symbols("ε_P ε_T", real=True)
 
 
 p0, p1, p2, p3 = (sp.Function(f"p{μ}")(τ) for μ in range(4))
@@ -48,11 +49,12 @@ mass_shell_poly_rule = {m**2 - p0**2 + p1**2 + p2**2 + p3**2: 0}
 # Definitions from the paper
 # ----------------------------
 
-ω  = (1/(m*(p0 + m))) * ṗ.cross(p) # Thomas precession vector
+E = ε_T*p0 # |p^0| on the component with sign(p^0)=ε_T.
+ω  = (1/(m*(E + m))) * ṗ.cross(p) # Thomas precession vector
 
-# Formula for W^μ verified in pauli_lubanski_vector.py with ε_P = ε_T = +1
-W0 = p.dot(s)
-W  = m*s + (W0/(p0 + m))*p
+# Formula for W^μ verified in pauli_lubanski_vector.py in all components.
+W0 = ε_P*p.dot(s)
+W  = ε_P*ε_T*(m*s + (p.dot(s)/(E + m))*p)
 W_contra = sp.Matrix([W0, W[0], W[1], W[2]])
 
 # S_{μν} = -(1/m^2) ε_{μνρσ} p^ρ W^σ
@@ -82,12 +84,12 @@ thomas_rule = {
     ṡ3: ω.cross(s)[2],
 }
 
-# Hidden momentum: q̇ - (q̇0/p0) p = (1/(m p0)) ( (p·s) ω + ṗ × s )
+# Hidden momentum: q̇ - (q̇0/p0) p = ε_P/(m |p0|) ( (p·s) ω + ṗ × s )
 # Verified in momentum_EL_equations.py
 hidden_momentum_rule = {
-    q̇1: (q̇0/p0)*p1 + (1/(m*p0)) * (p.dot(s)*ω + ṗ.cross(s))[0],
-    q̇2: (q̇0/p0)*p2 + (1/(m*p0)) * (p.dot(s)*ω + ṗ.cross(s))[1],
-    q̇3: (q̇0/p0)*p3 + (1/(m*p0)) * (p.dot(s)*ω + ṗ.cross(s))[2],
+    q̇1: (q̇0/p0)*p1 + (ε_P/(m*E)) * (p.dot(s)*ω + ṗ.cross(s))[0],
+    q̇2: (q̇0/p0)*p2 + (ε_P/(m*E)) * (p.dot(s)*ω + ṗ.cross(s))[1],
+    q̇3: (q̇0/p0)*p3 + (ε_P/(m*E)) * (p.dot(s)*ω + ṗ.cross(s))[2],
 }
 
 # ---------------------------------------------------------------
@@ -95,6 +97,16 @@ hidden_momentum_rule = {
 # ---------------------------------------------------------------
 
 def simp(expr):
+    # Reduce the two component signs before factoring, including powers in
+    # rational denominators. This checks every (ε_P,ε_T) simultaneously.
+    num, den = sp.fraction(sp.together(expr))
+    def reduce_signs(poly):
+        return sp.expand(poly).replace(
+            lambda term: term.is_Pow and term.base in (ε_P, ε_T)
+            and term.exp.is_Integer,
+            lambda term: term.base**(term.exp % 2),
+        )
+    expr = reduce_signs(num)/reduce_signs(den)
     return sp.simplify(sp.together(sp.factor(expr)))
 
 diffs = {} 
@@ -110,4 +122,4 @@ for mu in range(4):
 
 assert set(diffs.values()) == {0}, diffs
 
-compute_time_elapsed("EL equations imply Ṡ = q̇ ∧ p verified")
+compute_time_elapsed("EL equations imply Ṡ = q̇ ∧ p verified for both parity and energy signs")

@@ -34,18 +34,19 @@ z = sqrt_p * u
 zb = sqrt_p.T * ub
 
 pσ = sigma(p0, p1, p2, p3)
-w  = (sqrt2 / m) * (ε_P * ε_T) * (pσ * ε * zb)
-wb = (sqrt2 / m) * (ε_P * ε_T) * (pσ.T * ε * z)
+# Lowering a column spinor uses ε.T, as in massive_orbits_dg.py.
+w  = (sqrt2 / m) * (ε_P * ε_T) * (pσ * ε.T * zb)
+wb = (sqrt2 / m) * (ε_P * ε_T) * (pσ.T * ε.T * z)
 
 # --------------------------------------------------------------------
-# Θ_ms = m Θ_T0 + s Θ_J3 = p_μ dq^μ + i(w_A dz^A - c.c) (eq. 2.3.31)
+# Θ_ms = m Θ_T0 + s Θ_J3 = p_μ dq^μ - i(w_A dz^A - c.c) (eq. 2.3.31)
 # --------------------------------------------------------------------
 
 dz  = z.jacobian(coords)
 dzb = zb.jacobian(coords)
 
-# s * Θ_J3 = i(w_A dz^A - c.c)
-sΘ_J3 = ( I * (w.T * ε * dz - wb.T * ε * dzb) ).T
+# s * Θ_J3 = -i(w_A dz^A - c.c)
+sΘ_J3 = ( -I * (w.T * ε * dz - wb.T * ε * dzb) ).T
 
 # m * Θ_T0 = p_μ dq^μ
 mΘ_T0 = sp.Matrix([0,0,0,0,p0,-p1,-p2,-p3,0,0,0])

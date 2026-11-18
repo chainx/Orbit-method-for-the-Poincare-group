@@ -131,9 +131,7 @@ def simplify_onshell(expr):
     return expr
 
 def simplify_vf(V):
-    V = sp.expand(V)
-    V_simp = sum([ simplify_onshell(V.coeff(bv))* bv for bv in C.base_vectors() ])
-    return V_simp
+    return sum(simplify_onshell(coef) * bv for bv, coef in decompose(V))
 
 def simplify_form(F):
     F = sp.expand(F)
@@ -147,8 +145,12 @@ def simplify_form(F):
 
 @lru_cache(maxsize=None)
 def decompose(V):
-    V = sp.expand(V)
-    return tuple([(bv, V.coeff(bv)) for bv in C.base_vectors()])
+    # BaseVectorField objects are noncommutative. In SymPy 1.9, asking
+    # an entire sum for .coeff(bv) can return zero even when its terms
+    # contain bv. Extract each expanded term's coefficient separately.
+    terms = sp.Add.make_args(sp.expand(V))
+    return tuple((bv, sum(term.coeff(bv) for term in terms))
+                 for bv in C.base_vectors())
 
 @lru_cache(maxsize=None)
 def differentiate(bv, expr):
@@ -163,8 +165,9 @@ def apply_vf(V, expr):
 # w^A(p,z,ε_P) = (sqrt(2)/m) ε_P ε_T p^{A dotA} zb_{dotA}
 # ------------------------------------------------------------
 
-w  = (sqrt2/m) * (ε_P*ε_T) * (sigma(p0f, p1f, p2f, p3f)   * ε * zb)
-wb = (sqrt2/m) * (ε_P*ε_T) * (sigma(p0f, p1f, p2f, p3f).T * ε * z)
+# Lowering a column spinor uses ε.T: z_A = z^B ε_{BA}.
+w  = (sqrt2/m) * (ε_P*ε_T) * (sigma(p0f, p1f, p2f, p3f)   * ε.T * zb)
+wb = (sqrt2/m) * (ε_P*ε_T) * (sigma(p0f, p1f, p2f, p3f).T * ε.T * z)
 
 # -----------------------------
 # Build λ and Λ from p and z

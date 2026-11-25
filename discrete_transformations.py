@@ -59,17 +59,17 @@ def act_P(p, z, ε_P, a, b, c):
     return Pp, Pz, -ε_P
 
 def act_gauge_transfo(p, z, ε_P, a, b, c):
-    """ Right action of parity reversal """
+    """Right action of the specified lift P, with s(-,+)=P.
+    In particular, right multiplication sends the identity's z_s to +w_s.
+    """
     double_cover_sign = ε_P**a * sp.sign(p[0])**(a+b+c)
-    Gz = double_cover_sign * -w(p,z,ε_P)
+    Gz = double_cover_sign * w(p,z,ε_P)
     return p, Gz, -ε_P
 
 def act_P_gauge_fixed(p, z, ε_P, a, b, c):
     Pp = sp.diag(1, -1, -1, -1) * p
     double_cover_sign = (-1)**a * sp.sign(p[0])**(a+b+c)
-    # Pz = double_cover_sign * -ε_P*R*sp.conjugate(w(p, z, ε_P))
-    # Pz = double_cover_sign * -ε_P*w(Pp, R*sp.conjugate(z), ε_P)
-    Pz = double_cover_sign * -sp.sign(p[0]) * (sp.sqrt(2)/m) * sigma(Pp) * z
+    Pz = double_cover_sign * sp.sign(p[0]) * (sp.sqrt(2)/m) * sigma(Pp) * z
     return Pp, Pz, ε_P
 
 # =====================   ALGEBRAIC SIMPLIFICATION   =====================
@@ -138,7 +138,7 @@ def verify_relations():
             ('PT squared', (-1)**c *     z, compose(P, T, P, T)),
             ('PG squared',               z, compose(P, G, P, G)),
             ('TG squared', (-1)**(a+b) * z, compose(T, G, T, G)),
-            ('PG', -(-1)**a * ε_P * sp.sign(p[0])**(a+b+c) * R*sp.conjugate(w(p, z, ε_P)), compose(P, G)),
+            ('PG', (-1)**a * ε_P * sp.sign(p[0])**(a+b+c) * R*sp.conjugate(w(p, z, ε_P)), compose(P, G)),
         ]
         for check_name, z_target, func in checks:
             _, z_actual, _ = func(p, z, ε_P)

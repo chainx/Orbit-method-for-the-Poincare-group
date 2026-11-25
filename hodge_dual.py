@@ -22,12 +22,9 @@ def σ(mu, A, dotA):
 
 def Lorentz_LeviCivita(mu,nu,rho,sig):
     """
-    Lorentzian Levi-Civita tensor convention.
-    The overall sign of ε_{μνρσ} is fixed by the choice of orientation, which is most
-    naturally specified by declaring the ordered coordinate basis (∂_0,∂_1,∂_2,∂_3) to be positively oriented, 
-    i.e. ε^{0123} = +1.
+    Lorentzian Levi-Civita tensor with all four indices lowered.
 
-    In Lorentzian signature (+---), lowering all indices introduces a minus sign since det(g) = −1, giving ε_{0123} = −1.
+    We use ε^{0123} = +1. Lowering all four indices in signature (+---) gives ε_{0123} = −1.
     """
     return -sp.LeviCivita(mu,nu,rho,sig)
 
